@@ -1,18 +1,18 @@
 ---
 name: parley
-description: Set up, check, change or remove a parley chat assistant for the user's business. Use when the user says "set up parley", "add a chat assistant / chatbot to my site", "check parley", "show my parley conversations", "change what the assistant says", or "connect WhatsApp/Telegram to my assistant". parley answers the business's customers on its website (and optionally WhatsApp or Telegram), emails the owner a daily summary, and is managed entirely by asking the coding agent.
+description: Set up, check, change or remove a parley chat assistant for the user's business. Use when the user says "set up parley", "add a chat assistant / chatbot to my site", "check parley", "show my parley conversations", "change what the assistant says", or "connect email/WhatsApp/Telegram to my assistant". parley answers the business's customers on its website (and optionally WhatsApp or Telegram), emails the owner a daily summary, and is managed entirely by asking the coding agent.
 ---
 
 # parley
 
 parley gives a business its own chat assistant:
 
-- It answers visitors on the website through a chat button on every page, and optionally on WhatsApp or Telegram.
+- It answers visitors on the website through a chat button on every page, and optionally by email, WhatsApp or Telegram.
 - Its knowledge and rules come from the business's own website and the owner's answers. It doesn't make things up, and it hands over to a human for anything it can't handle.
 - Each morning the owner gets an email: how many people it talked to, what they asked, and which conversations need a human.
 - The owner changes anything, such as what it says, what it must never say, or its name or greeting, by asking their coding agent. That's you.
 
-You manage parley through the **parley MCP server** (`https://mcp.aikaara.com/parley`). Its tools are `create_agent`, `update_agent`, `get_agent`, `list_agents`, `chat`, `publish_web`, `conversations`, `read_conversation`, `set_digest`, `usage`, `connect_whatsapp`, `connect_telegram`, `send_message` and `report_bug`.
+You manage parley through the **parley MCP server** (`https://mcp.aikaara.com/parley`). Its tools are `create_agent`, `update_agent`, `get_agent`, `list_agents`, `chat`, `publish_web`, `conversations`, `read_conversation`, `set_digest`, `usage`, `connect_email`, `connect_whatsapp`, `connect_telegram`, `send_message` and `report_bug`.
 
 **The person you are helping is probably not a developer.** Use plain words. Never ask them to edit code, and never paste terminal output or JSON at them. Ask only what you can't find out yourself. Explain each thing they have to click in one or two short sentences.
 
@@ -112,7 +112,8 @@ Close in plain words:
 - **Pause it:** `update_agent` with `active: false`. To resume, `active: true`.
 - **Change the daily email:** `set_digest`.
 
-## Add WhatsApp or Telegram (optional)
+## Add email, WhatsApp or Telegram (optional)
+- **Email:** `connect_email` gives the assistant its own address (for example `acme@mail.parley.aikaara.com`). Customers can email it directly, or the owner can forward their support inbox to it. The assistant replies in the same email thread, and attachments and voice notes reach it too.
 - **Telegram:** the owner creates a bot with @BotFather in Telegram and gives you the token. Then call `connect_telegram`.
 - **WhatsApp:** needs a WhatsApp Business number on Meta's Cloud API. The owner gets the Phone number ID, a permanent access token and the app secret from their Meta app. Then call `connect_whatsapp`, and walk them through pasting the returned webhook URL and verify token into Meta's WhatsApp → Configuration.
 - Pass tokens straight to the tool. Never repeat them back, and never write them into any file.
