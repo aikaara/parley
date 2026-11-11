@@ -6,9 +6,9 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 const skill = await readFile(new URL('../plugins/parley/skills/parley/SKILL.md', import.meta.url), 'utf8');
 const body = skill.replace(/^---\n[\s\S]*?\n---\n+/, '');
 
-const preamble = `<!-- parley install playbook for coding agents (Claude Code, Cursor, Codex…) and Claude. Generated from plugins/parley/skills/parley/SKILL.md. -->
+const preamble = `<!-- parley playbook for coding agents (Claude Code, Cursor, Codex…) and Claude. Generated from plugins/parley/skills/parley/SKILL.md. -->
 
-> **For the agent reading this:** the user asked you to set up, check or change their parley chat assistant. Follow this playbook. The service is https://parley.aikaara.com and its MCP server is https://mcp.aikaara.com/parley.
+> **For the agent reading this:** the user asked you to build on, check or change their product's parley setup. Follow this playbook. The service is https://parley.aikaara.com and its MCP server is https://mcp.aikaara.com/parley.
 
 `;
 

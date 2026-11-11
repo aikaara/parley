@@ -1,12 +1,17 @@
 {
   "name": "parley",
-  "owner": { "name": "Aikaara", "url": "https://parley.aikaara.com" },
-  "metadata": { "description": "parley: a chat assistant for your business, set up and run from your coding agent." },
+  "owner": {
+    "name": "Aikaara",
+    "url": "https://parley.aikaara.com"
+  },
+  "metadata": {
+    "description": "parley: the conversation layer to build products on \u2014 agents, channels, transcripts, learning."
+  },
   "plugins": [
     {
       "name": "parley",
       "source": "./plugins/parley",
-      "description": "Sets up a chat assistant for your business from Claude Code: built from your website, live on every page, with a daily email of what customers asked and what needs you.",
+      "description": "Build your product's conversations on parley from Claude Code: agents with your endpoints as tools, email/Telegram/WhatsApp/in-app channels, human takeover, self-learning.",
       "version": "0.1.0"
     }
   ]

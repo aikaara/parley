@@ -1,8 +1,18 @@
 {
   "name": "parley",
   "version": "0.1.0",
-  "description": "Set up, check and change your business's chat assistant: answers customers on your website (and WhatsApp/Telegram), emails you a daily summary, managed by asking your coding agent.",
-  "author": { "name": "Aikaara", "url": "https://parley.aikaara.com" },
+  "description": "Build your product's conversations on parley: agents with your app's endpoints as tools, email / Telegram / WhatsApp / in-app channels, transcripts and human takeover, and agents that learn from their owner.",
+  "author": {
+    "name": "Aikaara",
+    "url": "https://parley.aikaara.com"
+  },
   "homepage": "https://parley.aikaara.com",
-  "keywords": ["chatbot", "customer-support", "whatsapp", "assistant"]
+  "keywords": [
+    "agents",
+    "conversations",
+    "email",
+    "telegram",
+    "whatsapp",
+    "mcp"
+  ]
 }

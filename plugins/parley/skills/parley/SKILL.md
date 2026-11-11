@@ -1,128 +1,120 @@
 ---
 name: parley
-description: Set up, check, change or remove a parley chat assistant for the user's business. Use when the user says "set up parley", "add a chat assistant / chatbot to my site", "check parley", "show my parley conversations", "change what the assistant says", or "connect email/WhatsApp/Telegram to my assistant". parley answers the business's customers on its website (and optionally WhatsApp or Telegram), emails the owner a daily summary, and is managed entirely by asking the coding agent.
+description: Build a product's conversations on parley — the agent, its channels (email, Telegram, WhatsApp, your own app), its tools, transcripts, human takeover and self-learning — from the user's codebase. Use when the user says "set up parley", "use parley for our assistant/bot/support", "add an email or Telegram channel to our agent", "check parley", "show parley conversations", or wants an agent that learns from its owner.
 ---
 
 # parley
 
-parley gives a business its own chat assistant:
+parley is the conversation layer you build a product on. Your app keeps the product logic; parley runs the agent and everything around the conversation:
 
-- It answers visitors on the website through a chat button on every page, and optionally by email, WhatsApp or Telegram.
-- Its knowledge and rules come from the business's own website and the owner's answers. It doesn't make things up, and it hands over to a human for anything it can't handle.
-- Each morning the owner gets an email: how many people it talked to, what they asked, and which conversations need a human.
-- The owner changes anything, such as what it says, what it must never say, or its name or greeting, by asking their coding agent. That's you.
+- **Agents:** instructions (versioned) plus **your app's HTTP endpoints as tools**. The agent calls them with JSON arguments.
+- **Channels:**
+  - **email:** each agent gets its own address, or your app hands parley the mail it receives;
+  - **Telegram:** one shared bot for every agent, with links that bind a chat to an agent;
+  - **WhatsApp**;
+  - **your own app:** a `message` API with named threads.
+- **Conversations:** threads, transcripts with tool calls, a dashboard with "reply as a human", and buttons. Voice notes are transcribed; files become URLs.
+- **Self-learning:** the agent picks up its owner's standing preferences from corrections, follows them, and the owner can review or remove any of them.
+- **Owner email:** a daily summary of what the agent did and what needs a human.
+- **Model gateway:** an OpenAI-compatible endpoint with per-customer usage, transcription, and file/URL → text.
 
-You manage parley through the **parley MCP server** (`https://mcp.aikaara.com/parley`). Its tools are `create_agent`, `update_agent`, `get_agent`, `list_agents`, `chat`, `publish_web`, `conversations`, `read_conversation`, `set_digest`, `usage`, `connect_email`, `connect_whatsapp`, `connect_telegram`, `send_message` and `report_bug`.
+You work through the **parley MCP server** (`https://mcp.aikaara.com/parley`). Your app's server talks to the same endpoint with a service token.
 
-**The person you are helping is probably not a developer.** Use plain words. Never ask them to edit code, and never paste terminal output or JSON at them. Ask only what you can't find out yourself. Explain each thing they have to click in one or two short sentences.
+**Who you're helping:** usually a developer building a product. Be precise about interfaces, and never put secrets in code, files or chat.
 
-## 0. Connect parley (once per tool)
+## 0. Connect parley
 
-If the parley tools aren't available to you yet, connect the server, then have the owner sign in. Sign-in is by email: they get a 6-digit code and can add a passkey.
+If the parley tools aren't available yet:
 
-- **Claude Code:** run `claude mcp add --transport http parley https://mcp.aikaara.com/parley`. Then tell the owner: "Type `/mcp`, pick **parley** and choose **Authenticate**. A browser page asks for your email and a code we send you." Once they've signed in, the tools appear.
-- **Cursor:** add `"parley": { "url": "https://mcp.aikaara.com/parley" }` under `mcpServers` in `.cursor/mcp.json` (create the file if needed), then have them open Cursor Settings → MCP and sign in to parley.
-- **Codex and others:** add an MCP server named `parley` with the URL `https://mcp.aikaara.com/parley`, using the tool's usual way, and have the owner sign in when it asks.
-- **claude.ai or Claude Desktop:** the owner adds it under Settings → Connectors → Add custom connector, with the URL `https://mcp.aikaara.com/parley`.
+- **Claude Code:** run `claude mcp add --transport http parley https://mcp.aikaara.com/parley`, then have the user type `/mcp` → parley → **Authenticate**. They sign in with an email code or a passkey.
+- **Cursor:** add `"parley": { "url": "https://mcp.aikaara.com/parley" }` to `.cursor/mcp.json` and sign in from Settings → MCP.
+- **Other tools (Codex, claude.ai, Claude Desktop):** add an MCP server or custom connector with that URL.
 
-The account belongs to whoever signs in. The daily email goes to that address.
+Signing in creates the user's parley workspace.
 
-## Set up ("set up parley", "add a chat assistant")
+**For their app's server:** call `create_service_token{name}`. Have the user store the token as a secret in their app (e.g. `PARLEY_TOKEN`); never write it to a file you commit. The app sends it as `Authorization: Bearer` to the same MCP URL (JSON-RPC `tools/call`).
 
-### 1. Look before you ask
-If you're in a website project, find out on your own:
-- **What the business is:** read the home, about, services/products, pricing, FAQ, contact, shipping/returns and policy pages, or their content files.
-- **Facts the assistant will need:** opening hours, locations, prices or price ranges, delivery areas, how to book or buy, refund and cancellation rules, and contact details (email, phone, WhatsApp).
-- **Framework and deployment:** read `package.json` or the folder layout, the git remote and the host config. Find out whether pushing deploys the site.
-- **The base layout** where a `<script>` can go on every page: Next.js `app/layout`, `_document`, Astro/SvelteKit/Remix root layouts, or `index.html` for plain sites.
-- **An existing chat widget** (Intercom, Crisp, Tidio, Tawk, WhatsApp button…). If there is one, you'll ask about it in step 2.
+## 1. Look before you ask
 
-If you're **not** in a website project (e.g. claude.ai), ask for the website address and read it if you can browse. Otherwise ask the owner to describe the business in a few sentences.
+Read the codebase:
+- what the product does;
+- who the agent talks to: the product's customers, or its owner;
+- which actions the agent will need. These become tools: existing API routes, or ones you add.
+- which channels the product already uses: an email provider, a Telegram bot, WhatsApp.
 
-### 2. Ask once
-In a single short message, ask for:
-- what the assistant should help with (answering questions, taking enquiries, booking, sales…), if it isn't obvious;
-- anything it must never do or promise (discounts, medical/legal advice, delivery dates…);
-- who takes over when it can't help, and how (an email, a phone number, a WhatsApp link);
-- whether to replace the existing chat widget, if you found one (recommend replacing, so visitors don't get two).
+Then ask once for anything you couldn't find:
+- what the agent is for;
+- what it must never do;
+- which channels to use;
+- whether it should learn from the people it talks to. Only when those people ARE the owner.
 
-Don't ask for anything you already found.
+## 2. The agent and its tools
 
-### 3. Write the assistant's instructions
-Write the `instructions` (its system prompt) yourself, in this shape:
-- **Who it is:** "You are the assistant for <business>, <one line on what they do>."
-- **What it helps with,** as a short list.
-- **Facts:** only what the site or the owner said. Hours, prices, areas, policies, contact. Never invent a fact, price or policy. If something isn't here, it doesn't know it.
-- **Rules:**
-  - be brief and friendly;
-  - answer in the visitor's language;
-  - when unsure, or for anything it may not do, say so plainly and offer the handover contact;
-  - never promise what the owner ruled out;
-  - never ask for card numbers or passwords.
-- **Handover:** the exact words and contact for reaching a human.
+1. Run `create_agent{name, instructions, slug, greeting}`. Write the instructions from facts in the codebase and from the user; never invent policies.
+2. For each action, expose an HTTP endpoint in the app and register it with `add_tool{agent, name, description, url, parameters (JSON Schema), headers}`.
+   - **Request:** a POST whose body is the arguments.
+   - **Timeouts:** connect 30s, read 60s. Return quickly and post slow results back later with `send_message`.
+   - **Response:** 2xx with a short JSON result, which goes to the model; non-2xx with `{"error": "…"}`. Make writes idempotent, since there are no retries.
+   - **Headers** may use `{{agent.slug}}`, `{{conversation.id}}`, `{{user.ext_uid}}`, and `{{credential.<name>}}` for a secret the user enters in the parley dashboard (Configuration → Credentials). Never put the secret itself in headers.
+   - **Shared tools:** the same tool name + URL on many agents is one shared tool. A product with one agent per customer registers the tool once and tells the agents apart by `{{agent.slug}}`.
+3. Test with `chat{agent, message}`: the common cases, one it must refuse, and one that calls each tool.
 
-Pick a short `greeting` ("Hi! I can help with orders, delivery and returns. What do you need?").
+## 3. Channels
 
-### 4. Create it and test it
-- `create_agent` with the business name, your `instructions` and `greeting`.
-- `chat` with it 3–4 times as a real visitor would: two common questions, one it must refuse or hand over, and one in another language if the business has international visitors. If an answer is wrong, fix the instructions with `update_agent` and test again. Show the owner one good exchange in plain words, not the transcript.
+- **Email (native):** `connect_email{agent}` gives the agent `<handle>@mail.parley.aikaara.com`.
+  - Replies go out in the same thread. Buttons become links, attachments become URLs, and audio is transcribed.
+  - Customers can also forward a support inbox to that address.
+- **Email (bridge, the app already receives mail):** the app calls `receive_email{agent, from, subject, text, message_id, in_reply_to, references, attachments, deliver:"app"}` for each inbound email.
+  - parley threads it and returns `reply`. The app sends the reply itself.
+  - With buttons, the app also gets `button_links` to include.
+- **Telegram:** `connect_telegram{shared:true, bot_token}` connects one bot for every agent.
+  - `telegram_claim{agent}` returns a one-time `t.me/<bot>?start=<code>` link. Opening it binds that chat to the agent.
+  - Pass the bot token straight to the tool; never repeat it or store it.
+- **WhatsApp:** `connect_whatsapp{agent, phone_number_id, access_token, app_secret}`, then put the returned webhook URL and verify token into the Meta app.
+- **Your own app's UI:** `message{agent, thread, text}` returns the agent's reply for a named thread. `log_message{agent, thread, role, text}` records an exchange that happened elsewhere, such as a Claude connector, without a reply.
 
-### 5. Put it on the website
-- `publish_web` returns a `script` line. Add it once to the base layout so the chat button appears on every page:
-  - Next.js App Router: use `<Script src="…/embed.js" data-agent="…" strategy="afterInteractive" />` from `next/script` in `app/layout`. Pages Router: put it in `_document`.
-  - Other frameworks: put the `<script … defer>` tag before `</body>` in the base layout.
-  - If you're replacing an old widget, remove its snippet in the same change.
-- Optional attributes: `data-color="#hex"` to match the brand, `data-label="Ask us"`, `data-position="left"`.
-- Run the project's build and fix any errors.
-- **Ask before pushing,** because pushing usually deploys the live site. Then commit with a clear message and push to the branch that deploys.
-- **No website folder?** Give the owner the `chat_url`, which already works as a link they can share anywhere. Also give them the one `script` line to pass to whoever manages their website.
+**Proactive messages and buttons:** `send_message{conversation_id, text, buttons:[{label, value}]}`.
+- Telegram shows an inline keyboard; email and app threads get links.
+- A press reaches the agent as `[button] <label> (<value>)`.
+- Scheduling, for example a morning message at the owner's local time, stays in the app.
 
-### 6. The daily email
-Call `set_digest` with no arguments to confirm who gets it. It goes to the address they signed in with, at 9:00 in the morning, India time. If they want a different time, timezone or an extra address, set it now (`hour`, `timezone`, `email`).
+## 4. Learning (optional)
 
-### 7. Leave a note for future sessions
-In a website project, add this to `CLAUDE.md` (create it if missing), and to `AGENTS.md` if the project has one:
+`set_learning{agent, enabled:true, learn_from, kinds?}`:
+- `learn_from: "users"`: ONLY when the people the agent talks to are its owner, such as a personal assistant or a newsletter chief of staff.
+- `learn_from: "owner"` (default): learns only from the owner's own tests, dashboard replies and evidence the app posts. Use this for anything customer-facing, so customers can never teach it rules.
+
+The app can feed outcomes and read the rules:
+- `add_evidence{agent, text, origin?, kind?}`: e.g. "first draft vs the version the owner approved";
+- `record_metric{agent, name, value}` and `metrics{agent}`: is it improving;
+- `list_lessons{agent}` → `prompt_block`: inject it into any prompt the app runs itself;
+- `lessons_digest{agent}`: new rules plus ready-made buttons, for a weekly check-in.
+
+The owner can ask the agent "what have you learned?" or "forget that rule"; the agent calls its built-in `list_lessons` / `change_lesson`.
+
+## 5. Model gateway (optional)
+
+For the app's own LLM calls:
+- **Endpoint:** OpenAI-compatible, `https://api.aikaara.com/gateway/v1`, with a `grk_` key the user creates in the dashboard (AI Gateway → LLM routing clients). Send it as `Authorization: Bearer`.
+- **Usage per customer:** send `user` (or an `X-Tenant` header); read it back with `GET /gateway/v1/usage?group_by=end_user`.
+- **Model choice:** the request's `model` can pick another of the workspace's models if the key allows it.
+- **Also:** `POST /gateway/v1/audio/transcriptions` and `POST /gateway/v1/extract` (file or URL → text).
+
+## 6. Leave a note
+
+In `CLAUDE.md` (and `AGENTS.md` if present), add:
+
 ```md
 ## parley
-parley (chat assistant, agent `<slug>`) is on this site via the embed.js script in the base layout.
-To check or change it, use the parley MCP tools (server https://mcp.aikaara.com/parley); the playbook is at https://parley.aikaara.com/install.md.
+This product's conversations run on parley (agents: <slugs>; MCP https://mcp.aikaara.com/parley; app token in <secret name>).
+Tools are this app's endpoints under <path>. Playbook: https://parley.aikaara.com/install.md
 ```
 
-### 8. Tell them what to expect
-Close in plain words:
-- the chat button is live on every page (or here is your link);
-- a short email each morning: who it talked to, what they asked, and anything that needs them;
-- to change anything, just ask: "change what the assistant says about delivery", "show me yesterday's conversations".
+## Check / operate
 
-## Check ("check parley", "is my assistant working?")
-- `list_agents`: is it active and published?
-- `usage`: conversations today. Also check whether it's on parley's included allowance or their own AI key.
-- `conversations`: anything recent that looks stuck. Summarise in plain words: how many people, what they asked, and anything unanswered.
-- On a website, fetch the live homepage and confirm the `embed.js` script tag is there.
-
-## Change it
-- **"Show me conversations" / "what did people ask?"** Use `conversations`, then `read_conversation` for any that matter. Summarise; don't paste transcripts unless asked.
-- **"It got X wrong" / "make it say Y":**
-  1. Read the conversation if there is one.
-  2. Run `get_agent` and edit the existing `instructions` minimally, keeping every other rule.
-  3. Apply it with `update_agent`.
-  4. Test the same question with `chat`.
-
-  Every change is kept as a revision, so it can be undone.
-- **Pause it:** `update_agent` with `active: false`. To resume, `active: true`.
-- **Change the daily email:** `set_digest`.
-
-## Add email, WhatsApp or Telegram (optional)
-- **Email:** `connect_email` gives the assistant its own address (for example `acme@mail.parley.aikaara.com`). Customers can email it directly, or the owner can forward their support inbox to it. The assistant replies in the same email thread, and attachments and voice notes reach it too.
-- **Telegram:** the owner creates a bot with @BotFather in Telegram and gives you the token. Then call `connect_telegram`.
-- **WhatsApp:** needs a WhatsApp Business number on Meta's Cloud API. The owner gets the Phone number ID, a permanent access token and the app secret from their Meta app. Then call `connect_whatsapp`, and walk them through pasting the returned webhook URL and verify token into Meta's WhatsApp → Configuration.
-- Pass tokens straight to the tool. Never repeat them back, and never write them into any file.
-
-## Add-on: let other apps or AI agents talk to it
-Owners who run their own software can feed it conversations from elsewhere. `message` sends a message into a named thread (an email thread, a form, another agent) and returns the assistant's reply for their app to deliver. Offer this only if they ask; most businesses don't need it.
-
-## Remove
-Remove the `embed.js` script tag (and the `CLAUDE.md`/`AGENTS.md` note) from the site, and push with permission. Then pause the assistant with `update_agent` `active: false`. Turn off the email with `set_digest` `enabled: false`.
-
-## If something is wrong with parley itself
-Use `report_bug` with what happened and the conversation or agent involved. The parley team sees it within minutes.
+- **Check:** `list_agents`, `usage`, and `conversations{agent?, channel?}` → `[{id, agent, channel, status, …}]`; `read_conversation{conversation_id}` for one transcript.
+- **Change behaviour:** `get_agent`, then a minimal edit to `instructions` with `update_agent`, then `chat` to re-test. Every change is a revision.
+- **Pause:** `update_agent{active:false}`.
+- **Daily owner email:** `set_digest`.
+- **Human takeover:** the dashboard conversation view → **reply as a human**, sent over the conversation's channel.
+- **Bugs in parley itself:** `report_bug`.
