@@ -1,0 +1,8 @@
+{
+  "name": "parley",
+  "version": "0.1.0",
+  "description": "Set up, check and change your business's chat assistant: answers customers on your website (and WhatsApp/Telegram), emails you a daily summary, managed by asking your coding agent.",
+  "author": { "name": "Aikaara", "url": "https://parley.aikaara.com" },
+  "homepage": "https://parley.aikaara.com",
+  "keywords": ["chatbot", "customer-support", "whatsapp", "assistant"]
+}

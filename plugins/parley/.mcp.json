@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "parley": { "type": "http", "url": "https://mcp.aikaara.com/parley" }
+  }
+}

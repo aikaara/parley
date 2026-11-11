@@ -1,0 +1,13 @@
+{
+  "name": "parley",
+  "owner": { "name": "Aikaara", "url": "https://parley.aikaara.com" },
+  "metadata": { "description": "parley: a chat assistant for your business, set up and run from your coding agent." },
+  "plugins": [
+    {
+      "name": "parley",
+      "source": "./plugins/parley",
+      "description": "Sets up a chat assistant for your business from Claude Code: built from your website, live on every page, with a daily email of what customers asked and what needs you.",
+      "version": "0.1.0"
+    }
+  ]
+}
